@@ -95,6 +95,7 @@ typedef struct
     DWORD StopBit;
     DWORD Parity;
     DWORD FlowControl;
+    DWORD EncodingFormat;  // 添加编码格式字段：0=UTF8, 1=GBK
 }SERIAL_CONFIG;
 
 static SERIAL_CONFIG ReadSerialConfig()
@@ -107,6 +108,7 @@ static SERIAL_CONFIG ReadSerialConfig()
     cfg.StopBit = ONESTOPBIT;
     cfg.Parity = NOPARITY;
     cfg.FlowControl = 0;
+    cfg.EncodingFormat = 0;  // 默认使用UTF-8编码
     if (ERROR_SUCCESS == ::RegOpenKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\SerialForWindowsTerminal", 0, KEY_READ, &hKey))
     {
         DWORD dwSize = sizeof(DWORD);
@@ -118,6 +120,7 @@ static SERIAL_CONFIG ReadSerialConfig()
         ::RegQueryValueEx(hKey, L"StopBit", 0, &dwType, (LPBYTE)&cfg.StopBit, &dwSize);
         ::RegQueryValueEx(hKey, L"Parity", 0, &dwType, (LPBYTE)&cfg.Parity, &dwSize);
         ::RegQueryValueEx(hKey, L"FlowControl", 0, &dwType, (LPBYTE)&cfg.FlowControl, &dwSize);
+        ::RegQueryValueEx(hKey, L"EncodingFormat", 0, &dwType, (LPBYTE)&cfg.EncodingFormat, &dwSize);  // 读取编码格式
         ::RegCloseKey(hKey);
     }
     return cfg;
@@ -137,6 +140,7 @@ static void WriteSerialConfig(const SERIAL_CONFIG& cfg)
         ::RegSetValueEx(hKey, L"StopBit", 0, dwType, (CONST LPBYTE) & cfg.StopBit, dwSize);
         ::RegSetValueEx(hKey, L"Parity", 0, dwType, (CONST LPBYTE) & cfg.Parity, dwSize);
         ::RegSetValueEx(hKey, L"FlowControl", 0, dwType, (CONST LPBYTE) & cfg.FlowControl, dwSize);
+        ::RegSetValueEx(hKey, L"EncodingFormat", 0, dwType, (CONST LPBYTE) & cfg.EncodingFormat, dwSize);  // 写入编码格式
         ::RegCloseKey(hKey);
     }
 }
@@ -307,6 +311,20 @@ int wmain(int argc, const WCHAR* args[])
                 std::cerr << "\033[31m" << "error : " << ec.message() << "\033[0m" << std::endl;
                 continue;
             }
+            else
+            {
+                // 根据用户选择的编码格式设置控制台
+                if (cfg.EncodingFormat == 0) // UTF-8
+                {
+                    SetConsoleOutputCP(CP_UTF8);
+                    SetConsoleCP(CP_UTF8);
+                }
+                else // GBK
+                {
+                    SetConsoleOutputCP(936);  // 936是GBK的代码页
+                    SetConsoleCP(936);
+                }
+            }
             break;
         }
         else
@@ -420,6 +438,12 @@ INT_PTR CALLBACK SettingFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         ComboBox_AddString(hWndFlowControl, L"硬件");
         ComboBox_SetCurSel(hWndFlowControl, (int)(cfg.FlowControl));
 
+        // 在WM_INITDIALOG处理部分，在FlowControl下拉框之后添加编码格式下拉框
+        auto hWndEncoding = GetDlgItem(hDlg, IDC_COMBO_ENCODING);
+        ComboBox_AddString(hWndEncoding, L"UTF-8");
+        ComboBox_AddString(hWndEncoding, L"GBK");
+        ComboBox_SetCurSel(hWndEncoding, (int)(cfg.EncodingFormat));
+
         return (INT_PTR)TRUE;
     }
     case WM_DEVICECHANGE:
@@ -455,6 +479,9 @@ INT_PTR CALLBACK SettingFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 cfg.StopBit = ComboBox_GetCurSel(hWndStopBit);
                 cfg.Parity = ComboBox_GetCurSel(hWndParity);
                 cfg.FlowControl = ComboBox_GetCurSel(hWndFlowControl);
+                // 获取编码格式下拉框的当前选择
+                auto hWndEncoding = GetDlgItem(hDlg, IDC_COMBO_ENCODING);
+                cfg.EncodingFormat = ComboBox_GetCurSel(hWndEncoding);
                 WriteSerialConfig(cfg);
             }
             EndDialog(hDlg, LOWORD(wParam));

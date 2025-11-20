@@ -25,6 +25,8 @@
 #define IDC_COMBO_PARITY                1006
 #define IDC_COMBO6                      1007
 #define IDC_COMBO_FLOW_CONTROL          1007
+#define IDC_COMBO_FLOW_CONTROL2         1008
+#define IDC_COMBO_ENCODING              1008
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
