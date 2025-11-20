@@ -487,6 +487,7 @@ int wmain(int argc, const WCHAR* args[])
                 }
 
                     // 显示当前编码格式
+                    std::cout << "\033[36mVersion: v1.0.0\033[0m" << std::endl;
                     std::cout << "\033[32mConsole encoding: " << (cfg.EncodingFormat == 0 ? "UTF-8" : "GBK") << "\033[0m" << std::endl;
                     std::cout << "\033[32mEcho mode: " << (cfg.EchoMode == 0 ? "Off" : "On") << "\033[0m" << std::endl;
                     std::cout << "\033[33mPress Ctrl+A then Ctrl+C to toggle encoding format\033[0m" << std::endl;
