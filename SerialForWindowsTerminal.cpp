@@ -299,6 +299,7 @@ static void DoStreamToStream(TStream1& stream1, TStream2& stream2, std::vector<u
                                     // 通过取消所有异步操作来退出io_service
                                     stream1.cancel();
                                     stream2.cancel();
+                                    exit(0);
                                 }
                             }
                             // Ctrl+C: 切换编码格式
